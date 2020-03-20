@@ -1,0 +1,37 @@
+{
+  "generator-jhipster": {
+    "promptValues": {
+      "packageName": "com.moonbeam.slidy"
+    },
+    "jhipsterVersion": "6.7.1",
+    "applicationType": "monolith",
+    "baseName": "slidy",
+    "packageName": "com.moonbeam.slidy",
+    "packageFolder": "com/moonbeam/slidy",
+    "serverPort": "8080",
+    "authenticationType": "jwt",
+    "cacheProvider": "no",
+    "websocket": false,
+    "databaseType": "sql",
+    "devDatabaseType": "h2Memory",
+    "prodDatabaseType": "mysql",
+    "searchEngine": false,
+    "messageBroker": false,
+    "serviceDiscoveryType": false,
+    "buildTool": "maven",
+    "enableSwaggerCodegen": false,
+    "jwtSecretKey": "NjVjNDk5MmMyZjhlMTk2MGFmYWEyMjdiMWRmNTUyNzA3ZDM4MjcyNDAzNmRkN2EwNmQ1OGI4OTM2YTQwOGFjY2NlNjc4MmY3NjRjZmFlZmQ4ZWUxOGE0YTFjZDE3MDViMmU3OThkNGRjZWNmMjZiN2M5NmZiMGQzNjRjYWFhZjM=",
+    "embeddableLaunchScript": false,
+    "useSass": true,
+    "clientPackageManager": "npm",
+    "skipClient": true,
+    "creationTimestamp": 1584694702926,
+    "testFrameworks": [],
+    "jhiPrefix": "jhi",
+    "entitySuffix": "",
+    "dtoSuffix": "DTO",
+    "otherModules": [],
+    "enableTranslation": false,
+    "blueprints": []
+  }
+}
