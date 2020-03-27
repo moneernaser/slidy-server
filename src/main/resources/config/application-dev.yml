@@ -19,6 +19,13 @@ logging:
     io.github.jhipster: DEBUG
     com.moonbeam.slidy: DEBUG
 
+securityDefinitions:
+  basicAuth:
+    type: basic
+# To apply Basic auth to the whole API:
+security:
+  - basicAuth: []
+
 spring:
   profiles:
     active: dev
