@@ -3,6 +3,7 @@ package com.moonbeam.slidy.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.moonbeam.slidy.service.SlideCreateUpdateListener;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -14,6 +15,7 @@ import java.util.Objects;
  */
 @Entity
 @Table(name = "slide")
+@EntityListeners({SlideCreateUpdateListener.class})
 public class Slide extends AbstractAuditingEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -25,7 +27,7 @@ public class Slide extends AbstractAuditingEntity implements Serializable {
     @Column(name = "name")
     private String name;
 
-    @Column(name = "url")
+    @Column(name = "url", nullable = false)
     private String url;
 
     @Lob

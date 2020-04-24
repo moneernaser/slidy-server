@@ -308,6 +308,11 @@
             <groupId>io.dropwizard.metrics</groupId>
             <artifactId>metrics-core</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.cloudinary</groupId>
+            <artifactId>cloudinary-http44</artifactId>
+            <version>1.14.0</version>
+        </dependency>
         <!-- jhipster-needle-maven-add-dependency -->
     </dependencies>
 

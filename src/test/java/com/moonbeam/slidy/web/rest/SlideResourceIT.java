@@ -1,18 +1,22 @@
 package com.moonbeam.slidy.web.rest;
 
+import com.cloudinary.Cloudinary;
 import com.moonbeam.slidy.SlidyApp;
 import com.moonbeam.slidy.domain.Slide;
 import com.moonbeam.slidy.domain.User;
 import com.moonbeam.slidy.repository.SlideRepository;
 import com.moonbeam.slidy.repository.UserRepository;
 import com.moonbeam.slidy.security.AuthoritiesConstants;
+import com.moonbeam.slidy.service.CloudinaryService;
 import com.moonbeam.slidy.web.rest.errors.ExceptionTranslator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
@@ -21,15 +25,21 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Base64Utils;
+import org.springframework.util.ObjectUtils;
 
 import javax.persistence.EntityManager;
+import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.moonbeam.slidy.web.rest.TestUtil.createFormattingConversionService;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.any;
 import static org.hamcrest.Matchers.hasItem;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -60,6 +70,10 @@ public class SlideResourceIT {
     private static final Instant DEFAULT_LAST_MODIFIED_DATE = Instant.ofEpochMilli(0L);
     private static final Instant UPDATED_LAST_MODIFIED_DATE = Instant.now().truncatedTo(ChronoUnit.MILLIS);
 
+    private static final String DEFAULT_URL = "mySecureURL";
+    private static final String UPDATED_URL = "mySecureURL";
+
+
     @Autowired
     private SlideRepository slideRepository;
 
@@ -78,12 +92,15 @@ public class SlideResourceIT {
     @Autowired
     private EntityManager em;
 
+    @MockBean
+    CloudinaryService cloudinaryService;
+
     private MockMvc restSlideMockMvc;
 
     private Slide slide;
 
     @BeforeEach
-    public void setup() {
+    public void setup() throws IOException {
         MockitoAnnotations.initMocks(this);
         final SlideResource slideResource = new SlideResource(slideRepository, userRepository);
         this.restSlideMockMvc = MockMvcBuilders.standaloneSetup(slideResource)
@@ -91,6 +108,13 @@ public class SlideResourceIT {
             .setControllerAdvice(exceptionTranslator)
             .setConversionService(createFormattingConversionService())
             .setMessageConverters(jacksonMessageConverter).build();
+        when(cloudinaryService.uploadImage(Mockito.any())).thenReturn(mockMap());
+    }
+
+    private Map mockMap() {
+        HashMap map = new HashMap();
+        map.put("secure_url", DEFAULT_URL);
+        return map;
     }
 
     /**
@@ -132,7 +156,7 @@ public class SlideResourceIT {
         assertThat(slideList).hasSize(databaseSizeBeforeCreate + 1);
         Slide testSlide = slideList.get(slideList.size() - 1);
         assertThat(testSlide.getName()).isEqualTo(DEFAULT_NAME);
-        assertThat(testSlide.getData()).isEqualTo(DEFAULT_DATA);
+        assertThat(testSlide.getData()).isEqualTo(null);
         assertThat(testSlide.getDataContentType()).isEqualTo(DEFAULT_DATA_CONTENT_TYPE);
         assertThat(testSlide.getShowStartDate()).isEqualTo(DEFAULT_SHOW_START_DATE);
         assertThat(testSlide.getShowEndDate()).isEqualTo(DEFAULT_SHOW_END_DATE);
@@ -170,9 +194,9 @@ public class SlideResourceIT {
             .andExpect(jsonPath("$.[*].id").value(hasItem(slide.getId().intValue())))
             .andExpect(jsonPath("$.[*].name").value(hasItem(DEFAULT_NAME.toString())))
             .andExpect(jsonPath("$.[*].dataContentType").value(hasItem(DEFAULT_DATA_CONTENT_TYPE)))
-            .andExpect(jsonPath("$.[*].data").value(hasItem(Base64Utils.encodeToString(DEFAULT_DATA))))
             .andExpect(jsonPath("$.[*].showStartDate").value(hasItem(DEFAULT_SHOW_START_DATE.toString())))
-            .andExpect(jsonPath("$.[*].showEndDate").value(hasItem(DEFAULT_SHOW_END_DATE.toString())));
+            .andExpect(jsonPath("$.[*].showEndDate").value(hasItem(DEFAULT_SHOW_END_DATE.toString())))
+            .andExpect(jsonPath("$.[*].url").value(hasItem(DEFAULT_URL)));
     }
 
     @Test
@@ -188,9 +212,9 @@ public class SlideResourceIT {
             .andExpect(jsonPath("$.id").value(slide.getId().intValue()))
             .andExpect(jsonPath("$.name").value(DEFAULT_NAME.toString()))
             .andExpect(jsonPath("$.dataContentType").value(DEFAULT_DATA_CONTENT_TYPE))
-            .andExpect(jsonPath("$.data").value(Base64Utils.encodeToString(DEFAULT_DATA)))
             .andExpect(jsonPath("$.showStartDate").value(DEFAULT_SHOW_START_DATE.toString()))
-            .andExpect(jsonPath("$.showEndDate").value(DEFAULT_SHOW_END_DATE.toString()));
+            .andExpect(jsonPath("$.showEndDate").value(DEFAULT_SHOW_END_DATE.toString()))
+            .andExpect(jsonPath("$.url").value(DEFAULT_URL));
     }
 
     @Test
@@ -229,10 +253,11 @@ public class SlideResourceIT {
         assertThat(slideList).hasSize(databaseSizeBeforeUpdate);
         Slide testSlide = slideList.get(slideList.size() - 1);
         assertThat(testSlide.getName()).isEqualTo(UPDATED_NAME);
-        assertThat(testSlide.getData()).isEqualTo(UPDATED_DATA);
+        assertThat(testSlide.getData()).isEqualTo(null);
         assertThat(testSlide.getDataContentType()).isEqualTo(UPDATED_DATA_CONTENT_TYPE);
         assertThat(testSlide.getShowStartDate()).isEqualTo(UPDATED_SHOW_START_DATE);
         assertThat(testSlide.getShowEndDate()).isEqualTo(UPDATED_SHOW_END_DATE);
+        assertThat(testSlide.getUrl()).isEqualTo(UPDATED_URL);
     }
 
     @Test

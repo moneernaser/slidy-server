@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.persistence.PreUpdate;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -31,14 +32,10 @@ public class SlideResource {
 
     private final SlideRepository slideRepository;
     private final UserRepository userRepository;
-    //private final CloudinaryProperties cloudinaryProperties;
 
-    public SlideResource(SlideRepository slideRepository, UserRepository userRepository
-                        //, CloudinaryProperties cloudinaryProperties
-    ) {
+    public SlideResource(SlideRepository slideRepository, UserRepository userRepository) {
         this.slideRepository = slideRepository;
         this.userRepository = userRepository;
-      //  this.cloudinaryProperties = cloudinaryProperties;
     }
 
     /**
@@ -54,14 +51,10 @@ public class SlideResource {
         if (slide.getId() != null) {
             throw new BadRequestAlertException("A new slide cannot already have an ID", ENTITY_NAME, "idexists");
         }
-        Optional<String> currentUserLogin = SecurityUtils.getCurrentUserLogin();
-        if (currentUserLogin.isPresent()) {
-            Optional<User> user = userRepository.findOneByLogin(currentUserLogin.get());
-            user.ifPresent(slide::setUser);
-        }
+        setUser(slide);
         Slide result = slideRepository.save(slide);
         return ResponseEntity.created(new URI("/api/slides/" + result.getId()))
-          //  .headers(HeaderUtil.createEntityCreationAlert(ENTITY_NAME, result.getId().toString()))
+          //  .headers(HeaderUtil.createEntityCr    eationAlert(ENTITY_NAME, result.getId().toString()))
             .body(result);
     }
 
@@ -82,10 +75,15 @@ public class SlideResource {
         if (slide.getId() == null) {
             return createSlide(slide);
         }
+        setUser(slide);
+        setUrl(slide);
         Slide result = slideRepository.save(slide);
         return ResponseEntity.ok()
-        //    .headers(HeaderUtil.createEntityUpdateAlert(ENTITY_NAME, slide.getId().toString()))
             .body(result);
+    }
+
+    private void setUrl(Slide slide) {
+        slideRepository.findById(slide.getId()).ifPresent(existingSlide -> slide.setUrl(existingSlide.getUrl()));
     }
 
     /**
@@ -123,7 +121,15 @@ public class SlideResource {
         log.debug("REST request to delete Slide : {}", id);
         slideRepository.deleteById(id);
         return ResponseEntity.ok()
-           // .headers(HeaderUtil.createEntityDeletionAlert(ENTITY_NAME, id.toString()))
             .build();
+    }
+
+
+    private void setUser(Slide slide) {
+        Optional<String> currentUserLogin = SecurityUtils.getCurrentUserLogin();
+        if (currentUserLogin.isPresent()) {
+            Optional<User> user = userRepository.findOneByLogin(currentUserLogin.get());
+            user.ifPresent(slide::setUser);
+        }
     }
 }
