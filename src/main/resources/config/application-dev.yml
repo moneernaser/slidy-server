@@ -74,8 +74,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: super.slidy.app@gmail.com
-    password: aisha087!
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     protocol: smtp
     tls: true
     properties.mail.smtp:
